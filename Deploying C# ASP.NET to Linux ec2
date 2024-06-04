@@ -1,0 +1,138 @@
+Deploying C# ASP.NET to Linux ec2 (using Kali Linux OS) 
+
+//step1: using ubuntu 22.004 LTS with Nginx as a webserver
+
+  #start installing .Net models on Linux
+  
+   sudo apt-get update  // updates apt-get
+
+
+   
+// Install >net SDK with Ap-Get
+
+   
+   sudo apt-get install dotnet-sdk-8.0    
+
+// next install Dotnet Runtime
+    
+    sudo apt-get install dotnet-runtime-8.0
+
+
+// finally for Dotnet modules we need to install the ASP.NET core Runtime
+
+     sudo apt-get install aspnetcore-runtime-8.0
+
+// Check to see if the installation was successful
+
+     dotnet --info
+
+// So it is time to install Nginx
+
+     sudo apt-get install nginx
+
+-----------------------------------------------------
+
+Now check the IP address of the server, it should give you a welcome message from Nginx. so let's continue...
+
+-------------------------------------------------------
+
+to forward a request to our app we need to CONFIGURE NGINX as a reverse  proxy, so we need to edit the 
+configuration file that is located in a specific location, use the following commands
+
+
+ // nano will open the GNU
+
+    sudo nano /etc/nginx/sites-available/default
+   
+now in the nano GNU nano 6.2 menu, scroll down to the location line and paste these configuration lines there
+ 
+       server {
+    listen 80;
+    server_name _;
+
+    location / {
+        proxy_pass http://127.0.0.1:5000;  
+        proxy_http_version 1.1;
+        proxy_set_header   Upgrade $http_upgrade;
+        proxy_set_header   Connection keep-alive;
+        proxy_set_header   Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded_Proto $schema;
+    }
+   the save it, now nginx is ready to place a role in our Linux server
+
+---------------------------------------------------------------------
+
+
+now go back to your visual Studio and change the launchsetting.json
+
+  /// under properties>launchsetings.json
+
+      under profiles, configure HTTP, navigate to the line of "application" and change the port from 5029 to 5000 to coincide with your nginx settings.
+
+/// Publish the application to your folder and click finish, the publish to generate published files in your destination folder.
+
+Remember to go to program.cs and disable httpsredirection 
+
+
+ ------------------------------------------------------------
+
+Navigate back to Linux cmd  to create a folder under "/var/www" and give the user permission to put the published files there.
+
+  cd /var/www
+
+  sudo mkdir app
+  
+  sudo chmod 666 app  //this commands gives the required permission to the user.
+
+  sudo chown mz app  //change the owner of the folder we just created
+  
+----------------------------------------------------------------
+
+Now, let's transfer the files to the server. I used WinSCP to transfer the files to the server..cd
+
+enter IP of the server, port 22,  username: user and password:... & login to the server.
+
+Or use the command from ur Linux vm:  sudo scp -rv <yourFile> user@<remote-ip>:/var/www/app
+
+
+
+
+Now that you have logged into the server, we can check if we have permission to put our folder into  /var/www ..( check if an error message appears)
+
+turn back to the command line and enter this command:
+     sudo chmod 777 app
+
+-- then check if you have the permission now..great...
+
+copy and drag your webapp published folder to /var/www/app 
+
+--------------------------------------------------------------------------------
+now check if the application at the test level is running fine:
+
+cd /var/wwww/app
+sudo dotnet <yourapplicationname.dll>
+
+--check the local link to see if it works
+
+---------------------------------------------------------------------------
+
+Now we need to create a service for the web application we created
+
+
+sudo nano /etc/systemd/system/linuxWebAppTest(app name here).service
+
+      checkout if your app name appears as service config and save
+
+sudo systemctl enable <yourappname>.service  //enables service
+sudo systemctl start <yourappname>.service  //start service
+
+sudo nginx -s reload  //to see if our service is working
+
+------------------------
+
+
+Ubuntu with WinSCP is different, go to advance settings, tens on the left navigate to ssh, under ssh, 
+click authentication, on your right go to the field where it says upload putty, then upload your .pem file, 
+accdept conditions for converting..click okay. then go back to login, select scp, ur username pass then connect
